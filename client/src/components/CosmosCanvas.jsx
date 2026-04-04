@@ -8,12 +8,16 @@ const CosmosCanvas = ({ currentUser, otherUsers, onMove, socketId }) => {
   const keysRef = useRef(new Set());
   const targetsRef = useRef([]);
 
-  // --- Beach Environment ---
-  // We can add beach obstacles like shells or surfboards later if needed.
+  // --- Private Room Environment ---
   const obstacles = [
-    { x: 200, y: 200, r: 30, type: 'shell' },
-    { x: 800, y: 150, r: 40, type: 'umbrella' },
-    { x: 500, y: 600, r: 50, type: 'ball' },
+    // Central Wall Partitions (Simulating the rooms in the reference image)
+    { x: 380, y: 300, w: 20, h: 550, type: 'wall' }, 
+    { x: 620, y: 400, w: 200, h: 20, type: 'wall' },
+    // Furniture Obstacles (Chairs/Desks)
+    { x: 250, y: 200, r: 35, type: 'chair' },
+    { x: 250, y: 400, r: 35, type: 'chair' },
+    { x: 850, y: 200, r: 35, type: 'chair' },
+    { x: 850, y: 400, r: 35, type: 'chair' },
   ];
 
   useEffect(() => {
@@ -26,7 +30,7 @@ const CosmosCanvas = ({ currentUser, otherUsers, onMove, socketId }) => {
 
       const app = new PIXI.Application();
       try {
-        await app.init({ background: '#f5e6ca', resizeTo: window, antialias: true, hello: false });
+        await app.init({ background: '#0f172a', resizeTo: window, antialias: true, hello: false });
         containerRef.current.appendChild(app.canvas);
         appRef.current = app;
 
@@ -35,34 +39,32 @@ const CosmosCanvas = ({ currentUser, otherUsers, onMove, socketId }) => {
         const textureMap = {};
 
         try {
-          const avatarIds = ['avatar1', 'avatar2', 'avatar3', 'avatar4', 'avatar5'];
           for (const id of avatarIds) {
             textureMap[`/avatars/${id}.png`] = await PIXI.Assets.load(`/avatars/${id}.png`);
           }
-          parkTexture = await PIXI.Assets.load('/assets/beach_bg.png');
+          parkTexture = await PIXI.Assets.load('/assets/office_room.png');
         } catch (e) {
           console.error("Asset loading partially failed, using fallback:", e);
         }
 
-        // --- 2. Beach Background ---
+        // --- 2. Private Room Background ---
         if (parkTexture) {
-          const beachBg = new PIXI.Sprite(parkTexture);
+          const roomBg = new PIXI.Sprite(parkTexture);
           // Scale to cover screen
-          const scale = Math.max(window.innerWidth / beachBg.width, window.innerHeight / beachBg.height);
-          beachBg.scale.set(scale);
-          beachBg.anchor.set(0.5);
-          beachBg.x = window.innerWidth / 2;
-          beachBg.y = window.innerHeight / 2;
+          const scale = Math.max(window.innerWidth / roomBg.width, window.innerHeight / roomBg.height);
+          roomBg.scale.set(scale);
+          roomBg.anchor.set(0.5);
+          roomBg.x = window.innerWidth / 2;
+          roomBg.y = window.innerHeight / 2;
+          
+          app.stage.addChildAt(roomBg, 0);
 
-          app.stage.addChildAt(beachBg, 0);
-
-          // Subtle parallax/follow logic
+          // Suble depth follow
           app.ticker.add(() => {
             const user = targetsRef.current.find(u => u.id === 'me');
             if (user) {
-              // Move background slightly opposite to player for depth
-              beachBg.x = (window.innerWidth / 2) - (user.x - window.innerWidth / 2) * 0.1;
-              beachBg.y = (window.innerHeight / 2) - (user.y - window.innerHeight / 2) * 0.1;
+              roomBg.x = (window.innerWidth / 2) - (user.x - window.innerWidth / 2) * 0.05;
+              roomBg.y = (window.innerHeight / 2) - (user.y - window.innerHeight / 2) * 0.05;
             }
           });
         }
@@ -106,7 +108,12 @@ const CosmosCanvas = ({ currentUser, otherUsers, onMove, socketId }) => {
           if (dx !== 0 || dy !== 0) {
             let nx = user.x + dx; let ny = user.y + dy;
             obstacles.forEach(obs => {
-              if (obs.r) {
+              if (obs.w) {
+                // Rectangular collision support (Walls)
+                if (nx > obs.x - obs.w / 2 && nx < obs.x + obs.w / 2 && ny > obs.y - obs.h / 2 && ny < obs.y + obs.h / 2) {
+                  nx = user.x; ny = user.y;
+                }
+              } else if (obs.r) {
                 const dist = Math.sqrt((nx - obs.x) ** 2 + (ny - obs.y) ** 2);
                 if (dist < obs.r) {
                   const ang = Math.atan2(ny - obs.y, nx - obs.x);
