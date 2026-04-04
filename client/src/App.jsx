@@ -95,7 +95,10 @@ const App = () => {
   }
 
   return (
-    <div className="relative w-screen h-screen bg-slate-950">
+    <div className="relative w-screen h-screen overflow-hidden selection:bg-purple-500/30">
+      {/* Decorative Background Vignette */}
+      <div className="vignette-overlay" />
+
       <CosmosCanvas
         currentUser={user}
         otherUsers={users.filter(u => u.id !== socket?.id)}
@@ -114,11 +117,21 @@ const App = () => {
       )}
 
       {/* Stats / UI Overlay */}
-      <div className="absolute top-4 left-4 p-4 glass rounded-xl pointer-events-none">
-        <h1 className="text-xl font-bold text-glow mb-1">Cosmos Chat</h1>
-        <p className="text-xs text-slate-400">Move: WASD or Arrows</p>
-        <div className="mt-2 text-sm">
-          <span className="text-slate-500">Connected:</span> {users.length}
+      <div className="absolute top-6 left-6 p-5 glass rounded-2xl pointer-events-none transition-all duration-500 hover:scale-[1.02]">
+        <h1 className="text-2xl font-extrabold text-glow mb-2 tracking-tight">Cosmos <span className="text-blue-400">Chat</span></h1>
+        <div className="flex flex-col gap-1.5">
+          <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-1">Controls</p>
+          <div className="flex gap-2">
+            <span className="glass-pill px-2 py-0.5 text-[9px] text-slate-300">WASD</span>
+            <span className="glass-pill px-2 py-0.5 text-[9px] text-slate-300">Arrows</span>
+          </div>
+        </div>
+        <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+          <span className="text-[10px] text-slate-500 uppercase tracking-wider">Connected</span>
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.5)]" />
+            <span className="text-sm font-bold text-slate-200 tabular-nums">{users.length}</span>
+          </div>
         </div>
       </div>
     </div>

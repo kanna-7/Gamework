@@ -8,16 +8,12 @@ const CosmosCanvas = ({ currentUser, otherUsers, onMove, socketId }) => {
   const keysRef = useRef(new Set());
   const targetsRef = useRef([]);
 
-  // --- Park Environment (Updated for v2 Image) ---
+  // --- Beach Environment ---
+  // We can add beach obstacles like shells or surfboards later if needed.
   const obstacles = [
-    { x: 450, y: 180, r: 65, type: 'tree' }, // Top center tree
-    { x: 800, y: 100, r: 70, type: 'tree' }, // Top right tree
-    { x: 100, y: 800, r: 80, type: 'tree' }, // Bottom left tree
-    { x: 880, y: 750, r: 85, type: 'tree' }, // Bottom right tree
-    { x: 380, y: 500, r: 35, type: 'rock' }, // Rocks by bridge
-    { x: 330, y: 530, r: 40, type: 'rock' }, 
-    // River boundary approx (Diagonal Top-Left to Bottom-Right)
-    { x: 500, y: 400, w: 150, h: 1000, type: 'river', isSafe: false, rotation: -0.7 }, 
+    { x: 200, y: 200, r: 30, type: 'shell' },
+    { x: 800, y: 150, r: 40, type: 'umbrella' },
+    { x: 500, y: 600, r: 50, type: 'ball' },
   ];
 
   useEffect(() => {
@@ -30,7 +26,7 @@ const CosmosCanvas = ({ currentUser, otherUsers, onMove, socketId }) => {
 
       const app = new PIXI.Application();
       try {
-        await app.init({ background: '#ddebb2', resizeTo: window, antialias: true, hello: false });
+        await app.init({ background: '#f5e6ca', resizeTo: window, antialias: true, hello: false });
         containerRef.current.appendChild(app.canvas);
         appRef.current = app;
 
@@ -39,34 +35,34 @@ const CosmosCanvas = ({ currentUser, otherUsers, onMove, socketId }) => {
         const textureMap = {};
 
         try {
-          const avatarIds = ['avatar1', 'avatar2', 'avatar3'];
+          const avatarIds = ['avatar1', 'avatar2', 'avatar3', 'avatar4', 'avatar5'];
           for (const id of avatarIds) {
             textureMap[`/avatars/${id}.png`] = await PIXI.Assets.load(`/avatars/${id}.png`);
           }
-          parkTexture = await PIXI.Assets.load('/assets/park_bg_v2.png');
+          parkTexture = await PIXI.Assets.load('/assets/beach_bg.png');
         } catch (e) {
           console.error("Asset loading partially failed, using fallback:", e);
         }
 
-        // --- 2. Park Background ---
+        // --- 2. Beach Background ---
         if (parkTexture) {
-          const parkBg = new PIXI.Sprite(parkTexture);
+          const beachBg = new PIXI.Sprite(parkTexture);
           // Scale to cover screen
-          const scale = Math.max(window.innerWidth / parkBg.width, window.innerHeight / parkBg.height);
-          parkBg.scale.set(scale);
-          parkBg.anchor.set(0.5);
-          parkBg.x = window.innerWidth / 2;
-          parkBg.y = window.innerHeight / 2;
-          
-          app.stage.addChildAt(parkBg, 0);
+          const scale = Math.max(window.innerWidth / beachBg.width, window.innerHeight / beachBg.height);
+          beachBg.scale.set(scale);
+          beachBg.anchor.set(0.5);
+          beachBg.x = window.innerWidth / 2;
+          beachBg.y = window.innerHeight / 2;
+
+          app.stage.addChildAt(beachBg, 0);
 
           // Subtle parallax/follow logic
           app.ticker.add(() => {
             const user = targetsRef.current.find(u => u.id === 'me');
             if (user) {
               // Move background slightly opposite to player for depth
-              parkBg.x = (window.innerWidth / 2) - (user.x - window.innerWidth/2) * 0.1;
-              parkBg.y = (window.innerHeight / 2) - (user.y - window.innerHeight/2) * 0.1;
+              beachBg.x = (window.innerWidth / 2) - (user.x - window.innerWidth / 2) * 0.1;
+              beachBg.y = (window.innerHeight / 2) - (user.y - window.innerHeight / 2) * 0.1;
             }
           });
         }

@@ -10,6 +10,8 @@ const LoginOverlay = ({ onLogin }) => {
     { id: 1, path: '/avatars/avatar1.png', color: '#8b5cf6' },
     { id: 2, path: '/avatars/avatar2.png', color: '#ec4899' },
     { id: 3, path: '/avatars/avatar3.png', color: '#06b6d4' },
+    { id: 4, path: '/avatars/avatar4.png', color: '#10b981' },
+    { id: 5, path: '/avatars/avatar5.png', color: '#f59e0b' },
   ];
 
   const handleAvatarSelect = (avatar) => {
@@ -55,7 +57,7 @@ const LoginOverlay = ({ onLogin }) => {
 
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 text-center">Select Your Avatar</label>
-            <div className="flex justify-center gap-6">
+            <div className="flex flex-wrap justify-center gap-6">
               {avatars.map((avatar) => (
                 <button
                   key={avatar.id}
