@@ -29,7 +29,7 @@ const App = () => {
       setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, x, y } : u)));
     });
     socket.on('user-left', (id) => setUsers((prev) => prev.filter((u) => u.id !== id)));
-    
+
     socket.on('proximity-update', (data) => {
       if (data.inRoom) {
         setProximityRoom({ id: data.roomId, members: data.members });
@@ -56,9 +56,12 @@ const App = () => {
     };
   }, [socket]);
 
-  const handleLogin = (username, color) => {
-    const startPos = { x: Math.random() * (window.innerWidth - 100) + 50, y: Math.random() * (window.innerHeight - 100) + 50 };
-    const userInfo = { username, color, ...startPos };
+  const handleLogin = (username, color, avatar) => {
+    const startPos = {
+      x: Math.random() * (window.innerWidth - 100) + 50,
+      y: Math.random() * (window.innerHeight - 100) + 50
+    };
+    const userInfo = { username, color, avatar, ...startPos };
     setUser(userInfo);
     socket.emit('join', userInfo);
   };
@@ -67,7 +70,7 @@ const App = () => {
 
   const handleMove = useCallback((x, y) => {
     if (!socket || !user) return;
-    
+
     // Update local state immediately for smooth rendering
     setUser(prev => ({ ...prev, x, y }));
 
@@ -77,7 +80,7 @@ const App = () => {
       socket.emit('move', { x, y });
       lastEmitRef.current = now;
     }
-    
+
     // Update users list locally for self position
     setUsers(prev => prev.map(u => u.id === socket.id ? { ...u, x, y } : u));
   }, [socket, user]);
@@ -93,18 +96,18 @@ const App = () => {
 
   return (
     <div className="relative w-screen h-screen bg-slate-950">
-      <CosmosCanvas 
-        currentUser={user} 
-        otherUsers={users.filter(u => u.id !== socket?.id)} 
+      <CosmosCanvas
+        currentUser={user}
+        otherUsers={users.filter(u => u.id !== socket?.id)}
         onMove={handleMove}
         proximityRadius={150}
         socketId={socket?.id}
       />
-      
+
       {proximityRoom && (
-        <ChatPanel 
-          room={proximityRoom} 
-          messages={messages} 
+        <ChatPanel
+          room={proximityRoom}
+          messages={messages}
           onSendMessage={sendMessage}
           currentUser={user}
         />

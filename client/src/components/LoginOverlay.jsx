@@ -1,89 +1,79 @@
 import React, { useState } from 'react';
-import { Rocket, Sparkles } from 'lucide-react';
-
-const COLORS = [
-  '#7c3aed', // Violet
-  '#2563eb', // Blue
-  '#059669', // Emerald
-  '#d97706', // Amber
-  '#dc2626', // Red
-  '#db2777', // Pink
-  '#4f46e5', // Indigo
-  '#0891b2', // Cyan
-];
+import { Rocket, Shield, Zap, Heart } from 'lucide-react';
 
 const LoginOverlay = ({ onLogin }) => {
   const [username, setUsername] = useState('');
-  const [selectedColor, setSelectedColor] = useState(COLORS[0]);
+  const [selectedAvatar, setSelectedAvatar] = useState('/avatars/avatar1.png');
+  const [selectedColor, setSelectedColor] = useState('#8b5cf6');
 
-  const handleSubmit = (e) => {
+  const avatars = [
+    { id: 1, path: '/avatars/avatar1.png', color: '#8b5cf6' },
+    { id: 2, path: '/avatars/avatar2.png', color: '#ec4899' },
+    { id: 3, path: '/avatars/avatar3.png', color: '#06b6d4' },
+  ];
+
+  const handleAvatarSelect = (avatar) => {
+    setSelectedAvatar(avatar.path);
+    setSelectedColor(avatar.color);
+  };
+
+  const handleLaunch = (e) => {
     e.preventDefault();
     if (username.trim()) {
-      onLogin(username, selectedColor);
+      onLogin(username.trim(), selectedColor, selectedAvatar);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 px-4">
-      {/* Background stars for login screen */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
-        {[...Array(50)].map((_, i) => (
-          <div 
-            key={i} 
-            className="absolute bg-white rounded-full animate-pulse-slow"
-            style={{
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              width: `${Math.random() * 3}px`,
-              height: `${Math.random() * 3}px`,
-              animationDelay: `${Math.random() * 4}s`
-            }}
-          />
-        ))}
-      </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+      <div className="w-full max-w-md glass rounded-3xl p-8 border border-white/10 shadow-2xl relative overflow-hidden">
+        {/* Background glow Decor */}
+        <div className="absolute -top-24 -left-24 w-48 h-48 bg-violet-600/20 blur-[100px]" />
+        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-cyan-600/20 blur-[100px]" />
 
-      <div className="w-full max-w-md glass p-8 rounded-3xl border-violet-500/20 shadow-2xl relative z-10">
-        <div className="flex flex-col items-center mb-8 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center mb-4 shadow-lg shadow-violet-900/40 rotate-3">
-             <Rocket size={32} className="text-white" />
+        <div className="relative text-center mb-10">
+          <div className="w-16 h-16 bg-gradient-to-tr from-violet-600 to-indigo-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-violet-900/40">
+            <Rocket className="text-white" size={32} />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-glow">Cosmos Chat</h1>
-          <p className="text-slate-400 mt-2 text-sm max-w-xs">
-            Enter the 2D space, move around, and talk to explorers near you.
-          </p>
+          <h1 className="text-4xl font-black text-white tracking-tight mb-2">Cosmos Chat</h1>
+          <p className="text-slate-400 text-sm">Choose your explorer and launch</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleLaunch} className="space-y-8">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 ml-1">
-              Your Explorer Name
-            </label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Explorer Name</label>
             <input
               autoFocus
               type="text"
-              maxLength={15}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="e.g. StarLord"
-              className="w-full bg-slate-900/50 border border-white/5 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-all font-medium"
+              placeholder="Enter username..."
+              className="w-full bg-slate-900/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all placeholder:text-slate-700"
+              required
             />
           </div>
 
           <div>
-             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 ml-1">
-              Choose Your Color
-            </label>
-            <div className="flex flex-wrap gap-2 justify-center">
-              {COLORS.map(color => (
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 text-center">Select Your Avatar</label>
+            <div className="flex justify-center gap-6">
+              {avatars.map((avatar) => (
                 <button
-                  key={color}
+                  key={avatar.id}
                   type="button"
-                  onClick={() => setSelectedColor(color)}
-                  className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 active:scale-95 ${
-                    selectedColor === color ? 'border-white scale-110 shadow-lg' : 'border-transparent opacity-60'
-                  }`}
-                  style={{ backgroundColor: color }}
-                />
+                  onClick={() => handleAvatarSelect(avatar)}
+                  className={`relative group transition-all duration-300 ${selectedAvatar === avatar.path ? 'scale-110' : 'opacity-60 grayscale hover:grayscale-0'
+                    }`}
+                >
+                  <div className={`w-20 h-20 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${selectedAvatar === avatar.path ? 'border-violet-500 shadow-xl shadow-violet-900/20' : 'border-white/5'
+                    }`}>
+                    <img src={avatar.path} alt={`Avatar ${avatar.id}`} className="w-full h-full object-cover" />
+                  </div>
+                  {selectedAvatar === avatar.path && (
+                    <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-violet-600 rounded-full flex items-center justify-center border-2 border-slate-900">
+                      <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                    </div>
+                  )}
+                </button>
               ))}
             </div>
           </div>
@@ -91,15 +81,22 @@ const LoginOverlay = ({ onLogin }) => {
           <button
             type="submit"
             disabled={!username.trim()}
-            className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 disabled:pointer-events-none py-3.5 rounded-xl font-bold shadow-lg shadow-violet-900/30 transition-all flex items-center justify-center gap-2 mt-4"
+            className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold py-5 rounded-2xl transition-all shadow-xl shadow-violet-900/40 disabled:opacity-50 disabled:grayscale cursor-pointer transform active:scale-[0.98]"
           >
             Launch into Cosmos
-            <Sparkles size={18} />
           </button>
         </form>
 
-        <div className="mt-8 text-center text-[10px] text-slate-600 font-medium tracking-widest uppercase">
-          Proximity Communication Enabled
+        <div className="mt-8 flex justify-center gap-8 text-slate-500">
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-tighter">
+            <Zap size={12} /> Proximity Based
+          </div>
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-tighter">
+            <Shield size={12} /> Secure Chat
+          </div>
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-tighter">
+            <Heart size={12} /> MongoDB Linked
+          </div>
         </div>
       </div>
     </div>
