@@ -8,7 +8,7 @@ const Message = require('./models/Message');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Allow images
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -26,27 +26,29 @@ mongoose.connect(MONGO_URI)
 
 // In-memory state
 const users = new Map(); // socketId -> { id, username, x, y, color }
-const PROXIMITY_RADIUS = 150; // Increased range for better UX
+const PROXIMITY_RADIUS = 250; // Sync with client-side visuals
+let proximitySequence = 0; // Prevent race conditions
 
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
 
-  socket.on('join', ({ username, color, x, y }) => {
+  socket.on('join', ({ username, color, avatar, x, y }) => {
     const newUser = {
       id: socket.id,
       username,
-      color: color || `#${Math.floor(Math.random()*16777215).toString(16)}`,
-      x: x || Math.random() * 800,
-      y: y || Math.random() * 600,
+      avatar: avatar || '/avatars/avatar1.png',
+      color: color || `#${Math.floor(Math.random() * 16777215).toString(16)}`,
+      x: x || Math.random() * (2000 - 200) + 100,
+      y: y || Math.random() * (2000 - 200) + 100,
     };
     users.set(socket.id, newUser);
-    
+
     // Broadcast existing users to the new user
     socket.emit('initial-users', Array.from(users.values()));
-    
+
     // Broadcast new user to everyone
     socket.broadcast.emit('user-joined', newUser);
-    
+
     updateProximityGroups();
   });
 
@@ -65,14 +67,7 @@ io.on('connection', (socket) => {
     if (!user) return;
 
     try {
-      const msg = new Message({
-        sender: user.username,
-        content,
-        roomId,
-      });
-      await msg.save();
-      
-      // Broadcast to specific room
+      // Always broadcast to specific room for real-time responsiveness
       io.to(roomId).emit('new-message', {
         id: Date.now(),
         sender: user.username,
@@ -80,8 +75,26 @@ io.on('connection', (socket) => {
         timestamp: new Date(),
         roomId
       });
+
+      // Attempt to save to MongoDB in background
+      const msg = new Message({
+        sender: user.username,
+        content,
+        roomId,
+      });
+      await msg.save();
     } catch (err) {
-      console.error('Error saving message:', err);
+      console.error('Error saving message to DB:', err);
+      // We don't return here because the message was already emitted
+    }
+  });
+
+  socket.on('call-signal', (data) => {
+    // Relay signaling data to a specific peer or room
+    if (data.to) {
+      io.to(data.to).emit('call-signal', { from: socket.id, signal: data.signal });
+    } else if (data.roomId) {
+      socket.to(data.roomId).emit('call-signal', { from: socket.id, signal: data.signal });
     }
   });
 
@@ -99,7 +112,7 @@ io.on('connection', (socket) => {
 function updateProximityGroups() {
   const userList = Array.from(users.values());
   const socketIds = Array.from(users.keys());
-  
+
   // Reset rooms for everyone
   socketIds.forEach(id => {
     const socket = io.sockets.sockets.get(id);
@@ -110,7 +123,9 @@ function updateProximityGroups() {
     }
   });
 
-  if (userList.length < 2) return;
+  // We'll proceed to build adjacency and components even if empty, as the component loop
+  // naturally handles this. Notify logic will clear out rooms for single users.
+  // if (userList.length < 2) return; 
 
   // Build adjacency list
   const adj = new Map();
@@ -121,7 +136,7 @@ function updateProximityGroups() {
       const u1 = userList[i];
       const u2 = userList[j];
       const dist = Math.sqrt(Math.pow(u1.x - u2.x, 2) + Math.pow(u1.y - u2.y, 2));
-      
+
       if (dist < PROXIMITY_RADIUS) {
         adj.get(u1.id).push(u2.id);
         adj.get(u2.id).push(u1.id);
@@ -138,7 +153,7 @@ function updateProximityGroups() {
       const component = [];
       const stack = [id];
       visited.add(id);
-      
+
       while (stack.length > 0) {
         const u = stack.pop();
         component.push(u);
@@ -156,38 +171,45 @@ function updateProximityGroups() {
   });
 
   // Assign rooms
-  components.forEach(async (component, index) => {
+  components.forEach((component) => {
     const roomId = `room_${component.sort().join('_').substring(0, 50)}`;
-    
-    // Fetch last 20 messages for this room
-    let history = [];
-    try {
-      history = await Message.find({ roomId }).sort({ timestamp: -1 }).limit(20);
-      history = history.reverse(); // Standard chronological order
-    } catch (err) {
-      console.error('Error fetching history:', err);
-    }
+    const members = component.map(cid => users.get(cid)?.username).filter(Boolean);
 
+    const currentSeq = ++proximitySequence;
     component.forEach(id => {
       const socket = io.sockets.sockets.get(id);
-      if (socket) {
+      const userData = users.get(id);
+      if (socket && userData) {
         socket.join(roomId);
-        socket.emit('proximity-update', { 
-          inRoom: true, 
-          roomId, 
-          members: component.map(cid => users.get(cid).username),
-          history
+        // Step 1: Open the UI immediately with a sequence ID
+        socket.emit('proximity-update', {
+          inRoom: true,
+          roomId,
+          members,
+          sequence: currentSeq
         });
       }
     });
+
+    // Step 2: Fetch and send history in the background
+    Message.find({ roomId }).sort({ timestamp: -1 }).limit(20)
+      .then(results => {
+        const history = results.reverse();
+        io.to(roomId).emit('history-update', { roomId, history });
+      })
+      .catch(err => console.error('Error fetching history:', err));
   });
 
   // Notify users NOT in a room
+  const currentSeq = ++proximitySequence;
   socketIds.forEach(id => {
     if (!visited.has(id) || adj.get(id).length === 0) {
       const socket = io.sockets.sockets.get(id);
       if (socket) {
-        socket.emit('proximity-update', { inRoom: false });
+        socket.emit('proximity-update', {
+          inRoom: false,
+          sequence: currentSeq
+        });
       }
     }
   });
@@ -195,5 +217,31 @@ function updateProximityGroups() {
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`\n🚀 Server running on port ${PORT}`);
+  console.log(`👉 http://localhost:${PORT}`);
 });
+
+// Robust error handling for port conflicts
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n❌ ERROR: Port ${PORT} is already in use!`);
+    console.log(`💡 TIP: Another instance of the server is likely running. You can kill it or try a different port.`);
+    process.exit(1);
+  } else {
+    console.error('\n❌ Server Error:', err);
+  }
+});
+
+// Graceful shutdown
+const gracefulShutdown = () => {
+  console.log('\n🛑 Shutting down server gracefully...');
+  server.close(() => {
+    mongoose.connection.close(false).then(() => {
+      console.log('✅ Connections closed. Goodbye!');
+      process.exit(0);
+    });
+  });
+};
+
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);
