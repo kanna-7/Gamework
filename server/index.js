@@ -13,16 +13,23 @@ app.use(express.json({ limit: '10mb' })); // Allow images
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: process.env.CLIENT_URL || '*',
     methods: ['GET', 'POST'],
   },
 });
 
 // MongoDB Connection
-const MONGO_URI = 'mongodb+srv://vithanalapraveen069_db_user:otjCfohswpUQIRXf@cluster0.opf9zwo.mongodb.net/cosmos_chat?retryWrites=true&w=majority';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/cosmos_chat';
+if (!process.env.MONGO_URI) {
+  console.warn('⚠️ WARNING: MONGO_URI not found in environment variables. Falling back to local MongoDB.');
+}
+
 mongoose.connect(MONGO_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+  .then(() => console.log('✅ Connected to MongoDB'))
+  .catch(err => {
+    console.error('❌ MongoDB connection error:', err);
+    process.exit(1);
+  });
 
 // In-memory state
 const users = new Map(); // socketId -> { id, username, x, y, color }

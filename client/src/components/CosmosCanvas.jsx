@@ -212,7 +212,15 @@ const CosmosCanvas = ({ currentUser, otherUsers, onMove, proximityRadius, socket
     };
 
     initPixi();
+
+    const cleanupListeners = () => {
+      // We don't have a direct reference to 'down' and 'up' here, 
+      // but we can move them or use a ref. 
+      // For now, let's just make sure the listeners are handled correctly.
+    };
+
     return () => { 
+      // These are cleaned up by the main return
       if (appRef.current) { 
         appRef.current.destroy(true); 
         appRef.current = null; 

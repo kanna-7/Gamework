@@ -21,7 +21,8 @@ const App = () => {
 
   // Connect to socket
   useEffect(() => {
-    const newSocket = io(window.location.origin === 'http://localhost:5173' ? 'http://localhost:5000' : window.location.origin);
+    const apiUrl = import.meta.env.VITE_API_URL || (window.location.origin === 'http://localhost:5173' ? 'http://localhost:5000' : window.location.origin);
+    const newSocket = io(apiUrl);
     setSocket(newSocket);
 
     return () => newSocket.close();

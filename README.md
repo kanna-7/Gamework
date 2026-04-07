@@ -21,34 +21,45 @@ A full-stack, real-time multiplayer proximity chat application. Explore a 2D cos
 - Node.js (v18 or higher)
 - npm or yarn
 
-### 2. Backend Setup
-1. Navigate to the `server` folder:
-   ```bash
-   cd server
-   ```
-2. The MongoDB URL is already integrated in `index.js`.
-3. Install dependencies (if not already done):
-   ```bash
-   npm install
-   ```
-4. Start the server:
-   ```bash
-   npm start
-   ```
+### 2. Environment Setup
+Create a `.env` file in both `client` and `server` folders using the `.env.example` templates.
 
-### 3. Frontend Setup
-1. Navigate to the `client` folder:
-   ```bash
-   cd client
-   ```
-2. Install dependencies (if not already done):
-   ```bash
-   npm install
-   ```
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
+**Server (.env):**
+```env
+PORT=5000
+MONGO_URI=your_mongodb_uri
+CLIENT_URL=http://localhost:5173
+```
+
+**Client (.env):**
+```env
+VITE_API_URL=http://localhost:5000
+```
+
+### 3. Backend Setup
+1. Navigate to the `server` folder: `cd server`
+2. Install dependencies: `npm install`
+3. Start the server: `npm start`
+
+### 4. Frontend Setup
+1. Navigate to the `client` folder: `cd client`
+2. Install dependencies: `npm install`
+3. Start development: `npm run dev`
+4. Build for production: `npm run build`
+
+### 5. Deployment Instructions (Render)
+
+#### Backend (Web Service)
+- **Root Directory**: `server`
+- **Build Command**: `npm install`
+- **Start Command**: `node index.js`
+- **Env Vars**: Add `MONGO_URI` and `CLIENT_URL` (frontend URL).
+
+#### Frontend (Static Site)
+- **Root Directory**: `client`
+- **Build Command**: `npm install && npm run build`
+- **Publish Directory**: `dist`
+- **Env Vars**: Add `VITE_API_URL` (backend URL).
 
 ### 4. Running the App
 1. Open `http://localhost:5173` in your browser.
