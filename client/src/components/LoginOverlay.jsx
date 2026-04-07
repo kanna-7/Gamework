@@ -47,6 +47,7 @@ const LoginOverlay = ({ onLogin }) => {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              maxLength={15}
               placeholder="Enter username..."
               className="w-full bg-slate-900/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all placeholder:text-slate-700"
               required

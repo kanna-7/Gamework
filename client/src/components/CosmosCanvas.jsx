@@ -94,18 +94,7 @@ const CosmosCanvas = ({ currentUser, otherUsers, onMove, proximityRadius, socket
         const lineLayer = new PIXI.Graphics();
         worldContainer.addChild(lineLayer);
 
-        // --- 4. Controls ---
-        const down = (e) => {
-          const key = e.key.toLowerCase();
-          keysRef.current.add(key);
-          
-          if (key === 'h') {
-             onMove(worldSize / 2, worldSize / 2);
-          }
-        };
-        const up = (e) => keysRef.current.delete(e.key.toLowerCase());
-        window.addEventListener('keydown', down);
-        window.addEventListener('keyup', up);
+        // --- 4. Controls Integrated into useEffect ---
 
         // --- 5. Main Ticker Loop ---
         app.ticker.add((ticker) => {
@@ -211,16 +200,21 @@ const CosmosCanvas = ({ currentUser, otherUsers, onMove, proximityRadius, socket
       }
     };
 
+    const down = (e) => {
+      const key = e.key.toLowerCase();
+      keysRef.current.add(key);
+      if (key === 'h') onMove(worldSize / 2, worldSize / 2);
+    };
+    const up = (e) => keysRef.current.delete(e.key.toLowerCase());
+
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+
     initPixi();
 
-    const cleanupListeners = () => {
-      // We don't have a direct reference to 'down' and 'up' here, 
-      // but we can move them or use a ref. 
-      // For now, let's just make sure the listeners are handled correctly.
-    };
-
     return () => { 
-      // These are cleaned up by the main return
+      window.removeEventListener('keydown', down);
+      window.removeEventListener('keyup', up);
       if (appRef.current) { 
         appRef.current.destroy(true); 
         appRef.current = null; 

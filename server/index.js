@@ -7,8 +7,13 @@ const mongoose = require('mongoose');
 const Message = require('./models/Message');
 
 const app = express();
-app.use(cors());
-app.use(express.json({ limit: '10mb' })); // Allow images
+const CLIENT_URL = process.env.CLIENT_URL || '*';
+
+app.use(cors({
+  origin: CLIENT_URL,
+  methods: ['GET', 'POST'],
+}));
+app.use(express.json({ limit: '10mb' }));
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -35,6 +40,7 @@ mongoose.connect(MONGO_URI)
 const users = new Map(); // socketId -> { id, username, x, y, color }
 const PROXIMITY_RADIUS = 250; // Sync with client-side visuals
 let proximitySequence = 0; // Prevent race conditions
+let proximityTimer = null; // Throttling
 
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
@@ -65,7 +71,14 @@ io.on('connection', (socket) => {
       user.x = x;
       user.y = y;
       socket.broadcast.emit('user-moved', { id: socket.id, x, y });
-      updateProximityGroups();
+      
+      // Throttle proximity updates to once every 500ms
+      if (!proximityTimer) {
+        proximityTimer = setTimeout(() => {
+          updateProximityGroups();
+          proximityTimer = null;
+        }, 500);
+      }
     }
   });
 

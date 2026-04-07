@@ -95,6 +95,7 @@ const ChatPanel = ({ room, messages, onSendMessage, onSendImage, toggleVideo, is
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          maxLength={200}
           placeholder="Say something cosmos..."
           className="flex-1 bg-slate-900 border border-white/5 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-violet-500/50 transition-all"
         />
