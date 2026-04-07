@@ -7,10 +7,20 @@ const mongoose = require('mongoose');
 const Message = require('./models/Message');
 
 const app = express();
-const CLIENT_URL = process.env.CLIENT_URL || '*';
+const CLIENT_URL = process.env.CLIENT_URL || 'https://gamework-e49l.vercel.app,http://localhost:5173,http://localhost:5174';
+
+// Handle multiple origins if provided as a comma-separated string
+let allowedOrigins = CLIENT_URL.includes(',') 
+  ? CLIENT_URL.split(',').map(o => o.trim()) 
+  : [CLIENT_URL]; // Ensure it's an array if only one URL is provided
+
+// Force include the Vercel deployed frontend
+if (!allowedOrigins.includes('https://gamework-e49l.vercel.app')) {
+  allowedOrigins.push('https://gamework-e49l.vercel.app');
+}
 
 app.use(cors({
-  origin: CLIENT_URL,
+  origin: allowedOrigins,
   methods: ['GET', 'POST'],
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -18,7 +28,7 @@ app.use(express.json({ limit: '10mb' }));
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || '*',
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
   },
 });
