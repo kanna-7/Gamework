@@ -21,8 +21,14 @@ const App = () => {
 
   // Connect to socket
   useEffect(() => {
+    // Determine the API URL based on environment or fallback
     const apiUrl = import.meta.env.VITE_API_URL || 'https://gamework.onrender.com';
-    const newSocket = io(apiUrl);
+    console.log('🔌 Connecting to socket server at:', apiUrl);
+    
+    const newSocket = io(apiUrl, {
+      reconnectionAttempts: 5,
+      timeout: 10000,
+    });
     setSocket(newSocket);
 
     return () => newSocket.close();

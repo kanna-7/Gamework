@@ -1,0 +1,31 @@
+services:
+  # Backend Web Service
+  - type: web
+    name: cosmos-backend
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: CLIENT_URL
+        fromStaticSite:
+          name: cosmos-frontend
+          property: url
+
+  # Frontend Static Site
+  - type: static
+    name: cosmos-frontend
+    runtime: node
+    plan: free
+    rootDir: client
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: cosmos-backend
+          property: url
